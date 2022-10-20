@@ -31,7 +31,7 @@ def update_delta(N, delta, energy_values, eigen_vectors, V=1.2, T=1):
         u = u_eigenvectors[:,i]
         v = v_eigenvectors[:,i]
         
-        delta += np.outer(u, v.conj())*(1 - 2*fm_distribution(E, T)) ## - np.outer(v.conj(), u)) * (1 - 2*fm_distribution(E, T))
+        delta += np.outer(u, v.conj())*(1 - 2*fm_distribution(E, T))  - np.outer(v.conj(), u) * (1 - 2*fm_distribution(E, T))
     
     return V/2 * delta
 
