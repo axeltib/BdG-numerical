@@ -16,7 +16,7 @@ class BdG_method:
         
         self.orbital_wave_function = orb_wave_function
         
-        self.convergence_threshold = 0.1  
+        self.convergence_threshold = 1e-4
         
         # Physical constants
         self.kB = 1
@@ -85,9 +85,16 @@ class BdG_method:
         return abs(min(np.abs(delta_spatial)) - max(np.abs(delta_spatial)))
     
     
-    def run_solver(self, n: int):
+    def run_solver(self) -> int:
         """ Runs the main loop of the solver, does this n times. """
-        for i in range(n):
+        iterations = 0
+        last_amplitude = self.get_order_parameter_amplitude(self.get_spatial_1d_gap_parameter()) + 1
+        while abs(self.get_order_parameter_amplitude(self.get_spatial_1d_gap_parameter()) - last_amplitude) > self.convergence_threshold:
+            last_amplitude = self.get_order_parameter_amplitude(self.get_spatial_1d_gap_parameter())
             energy_array, eigen_vectors = np.linalg.eig(self.H_bdg)
             self.self_consistent_condition(eigen_vectors, energy_array)  # Updates the gap parameter
             self.H_bdg = get_bdg_hamiltonian(self.H0, self.delta)
+            print(abs(self.get_order_parameter_amplitude(self.get_spatial_1d_gap_parameter()) - last_amplitude))
+            iterations += 1
+            
+        return iterations
