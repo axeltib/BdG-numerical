@@ -17,7 +17,7 @@ class BdG_method:
         
         self.convergence_threshold = 1e-4
         self.num_iterations = numiter
-        
+        self.dtype = "complex64"
         # Physical constants
         self.kB = 1
         
@@ -46,7 +46,7 @@ class BdG_method:
             else:
                 return 0
         H = np.array([get_H_element(i, j, self.N) for i in range(self.N) for j in range(self.N)]    )
-        return np.array(H, dtype=np.complex64).reshape((self.N,self.N))
+        return np.array(H, dtype=self.dtype).reshape((self.N,self.N))
 
         
     def _initialize_op(self):
@@ -62,16 +62,15 @@ class BdG_method:
         return 1 / (np.exp(np.real(E)/(self.kB * self.T)) + 1)
 
 
-    def self_consistent_condition(self, eigen_vectors, energy_eigenvalues):
+    def self_consistent_condition(self):
         """ Updates the gap parameter according to the self-consistent condition. """
-        #self.delta[:,:] = 0
+        energy_eigs, eigen_vecs = np.linalg.eig(self.H_bdg)
         # Divide the eigenevectors into its u and v part, by splitting between middle of the rows
-        u_eigenvectors = eigen_vectors[:self.N,:]
-        v_eigenvectors = eigen_vectors[self.N:,:]
-        delta_diag = np.zeros(self.N, dtype="complex128")
-        delta_tmp = np.zeros((self.N, self.N), dtype="complex128")
+        u_eigenvectors = eigen_vecs[:self.N,:]
+        v_eigenvectors = eigen_vecs[self.N:,:]
+        delta_diag = np.zeros(self.N, dtype=self.dtype)
         
-        for i, E in enumerate(energy_eigenvalues):
+        for i, E in enumerate(energy_eigs):
             if E < 0:  # should disregard negative eigenvalues, they
                 continue
             u = u_eigenvectors[:,i]
@@ -79,22 +78,20 @@ class BdG_method:
             delta_diag +=  self.V * u * v.conj() * (1 - 2*self.fermi_dirac_distribution(E)) #elem vise mult
             #delta_tmp += self.V * np.outer(u, v.conj()) * (1 - 2*self.fermi_dirac_distribution(E))
         self.delta = np.diag(delta_diag)
-        #self.delta = delta_tmp
-    
-    def get_order_parameter_amplitude(self, delta_spatial: np.array):
-        """ Calculates the amplitude of the order parameter, which is used to measure the gap. """
-        return abs(min(np.abs(delta_spatial)) - max(np.abs(delta_spatial)))
-    
+
+
     def set_temperature(self, T: float):
         """ Sets the temperature of the solver. Used when whanting to solve the same system for multiple temperatures. """
         self.T = T*self.t
         
         
+    def get_global_delta(self):
+        return np.mean(np.diag(self.delta))/self.t
+        
     def run_solver(self):
         """ Runs the main loop of the solver, does this n times. """
         
         for i in range(self.num_iterations):
-            energy_array, eigen_vectors = np.linalg.eig(self.H_bdg)
-            self.self_consistent_condition(eigen_vectors, energy_array)  # Updates the gap parameter
+            self.self_consistent_condition()  # Updates the gap parameter
             self.H_bdg = get_bdg_hamiltonian(self.H0, -self.delta)
         return self.delta
