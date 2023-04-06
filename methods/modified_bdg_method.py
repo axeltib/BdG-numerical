@@ -9,7 +9,6 @@ class MBdG_method(BdG_method):
     """
     def __init__(self, N: int, Nc: int, mu: float, t: float, T: float, numiter: int, spatial_dims=1, delta=0) -> None:
             super().__init__(N, Nc, mu, t, T, numiter, spatial_dims=spatial_dims, delta=delta)
-
             if 2*self.Nc >= self.N:
                 raise Exception("Clustering number Nc must be less than N!")
         
@@ -35,7 +34,7 @@ class MBdG_method(BdG_method):
         cluster_H, cluster_delta = self.construct_cluster_matrices(site_i)
         cluster_Hbdg = get_bdg_hamiltonian(cluster_H, -cluster_delta)
         energy_eigs, eigen_vecs = np.linalg.eig(cluster_Hbdg)
-        
+              
         # Divide the eigenevectors into its u and v part, by splitting between middle of the rows
         u_eigenvectors = eigen_vecs[:2*self.Nc+1,:]
         v_eigenvectors = eigen_vecs[2*self.Nc+1:,:]
@@ -45,15 +44,14 @@ class MBdG_method(BdG_method):
 
         delta_diag = np.zeros(2*self.Nc+1, dtype=self.dtype)
         
+        # for j in range(self.Nc):
         for i, E in enumerate(energy_eigs):
             if E < 0:  # should disregard negative eigenvalues, they
                 continue
             u = u_eigenvectors[:,i]
             v = v_eigenvectors[:,i]
             delta_diag +=  self.V * u * v.conj() * (1 - 2*self.fermi_dirac_distribution(E)) #elem vise mult
-            #delta_tmp += self.V * np.outer(u, v.conj()) * (1 - 2*self.fermi_dirac_distribution(E))
             
-        # return delta_diag[self.Nc]
         return np.mean(delta_diag)
         
         
@@ -63,10 +61,11 @@ class MBdG_method(BdG_method):
         for i in range(self.N):
             delta_tmp[i] = self.update_delta_site(i)
         self.delta = np.diag(delta_tmp)
-            
+        
     def run_solver(self):
         """ Runs the solver. """
         for i in range(self.num_iterations):
             self.run_one_pass()
         return self.delta
-        
+    
+
