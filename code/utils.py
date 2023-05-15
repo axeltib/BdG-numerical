@@ -71,3 +71,14 @@ def off_diag_block(H, a, n, offset):
         H[i+offset+1,i+1] = a[1,1]
 
     return H
+
+
+def calculate_critical_temperature(delta0):
+    return delta0 / 1.76
+
+
+def find_critical_temperature(T_set, deltas, threshold=1e-3):
+    # Must check that it is close to zero
+    for i, delta in enumerate(deltas):
+        if delta < threshold:
+            return T_set[i]

@@ -7,8 +7,8 @@ class MBdG_method(BdG_method):
     """
     Assumes only 1D. 
     """
-    def __init__(self, N: int, Nc: int, mu: float, t: float, T: float, numiter: int, spatial_dims=1, delta=0) -> None:
-            super().__init__(N, Nc, mu, t, T, numiter, spatial_dims=spatial_dims, delta=delta)
+    def __init__(self, N: int, Nc: int, mu: float, t: float, T: float, V: float, conv_thrs: float, delta=0) -> None:
+            super().__init__(N, Nc, mu, t, T, V, conv_thrs)
             if 2*self.Nc >= self.N:
                 raise Exception("Clustering number Nc must be less than N!")
         
@@ -32,7 +32,7 @@ class MBdG_method(BdG_method):
     def update_delta_site(self, site_i):
         """ Updates the gap parameter according to the self-consistent condition. """
         cluster_H, cluster_delta = self.construct_cluster_matrices(site_i)
-        cluster_Hbdg = get_bdg_hamiltonian(cluster_H, -cluster_delta)
+        cluster_Hbdg = get_bdg_hamiltonian(cluster_H, cluster_delta)
         energy_eigs, eigen_vecs = np.linalg.eig(cluster_Hbdg)
               
         # Divide the eigenevectors into its u and v part, by splitting between middle of the rows
@@ -64,8 +64,13 @@ class MBdG_method(BdG_method):
         
     def run_solver(self):
         """ Runs the solver. """
-        for i in range(self.num_iterations):
+        last_delta = self.get_global_delta() + 2*self.convergence_threshold
+        
+        while (abs(last_delta - self.get_global_delta()) > self.convergence_threshold):
+            last_delta = self.get_global_delta()
             self.run_one_pass()
+            
+            
         return self.delta
     
 

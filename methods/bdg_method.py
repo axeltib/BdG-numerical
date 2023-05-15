@@ -5,7 +5,9 @@ from utils import get_bdg_hamiltonian
 class BdG_method:
 
     """ Used to run BdG numerical solution to BCS problems.     """
-    def __init__(self, N: int, Nc: int, mu: float, t: float, T: float, numiter: int, spatial_dims=1, delta=0) -> None:
+    def __init__(self, N: int, Nc: int, mu: float, t: float, V: float, T: float, conv_thrs: float) -> None:
+        self.kB = 1
+        
         # Simulation parameters
         self.N = N
         self.Nc = Nc
@@ -13,22 +15,19 @@ class BdG_method:
         self.mu = mu
         self.t = t
         self.T = T*t
-        self.V = 2 * self.t
+        self.V = V
         
-        self.convergence_threshold = 1e-4
-        self.num_iterations = numiter
+        self.convergence_threshold = conv_thrs
+        
         self.dtype = "complex64"
         # Physical constants
-        self.kB = 1
         
         # Initialize quantities
         self.H0 = self.get_hamiltonian()
-        if not np.any(delta):
-            self.delta = self._initialize_op()
-        else:
-            self.delta = delta
-        self.H_bdg = get_bdg_hamiltonian(self.H0, -self.delta)
-        self.spatial_dimensions = spatial_dims  #Relevant in the calculation of the spatial gap parameter 
+
+        self.delta = self._initialize_op()
+
+        self.H_bdg = get_bdg_hamiltonian(self.H0, self.delta)
         
         
     def get_hamiltonian(self):
@@ -51,7 +50,7 @@ class BdG_method:
         
     def _initialize_op(self):
         """ Generates the initial gap/order parameter. """
-        diag_elements = 1 + np.random.random(self.N)  + 1j*np.random.random(self.N) 
+        diag_elements = np.random.random(self.N)  + 1j*np.random.random(self.N) 
         #return (2*np.random.random((self.N,self.N)) - 1) + 1j*(2*np.random.random((self.N,self.N)) - 1)
         return np.diag(diag_elements)
 
@@ -75,9 +74,9 @@ class BdG_method:
                 continue
             u = u_eigenvectors[:,i]
             v = v_eigenvectors[:,i]
-            delta_diag +=  self.V * u * v.conj() * (1 - 2*self.fermi_dirac_distribution(E)) #elem vise mult
+            delta_diag +=  -self.V * u * v.conj() * (1 - 2*self.fermi_dirac_distribution(E)) #elem vise mult
             #delta_tmp += self.V * np.outer(u, v.conj()) * (1 - 2*self.fermi_dirac_distribution(E))
-        self.delta = np.diag(delta_diag)
+        return np.diag(delta_diag) / self.t
 
 
     def set_temperature(self, T: float):
@@ -86,12 +85,17 @@ class BdG_method:
         
         
     def get_global_delta(self):
-        return np.mean(np.diag(self.delta))/self.t
+        return abs(np.mean(np.diag(self.delta)))
+        
         
     def run_solver(self):
         """ Runs the main loop of the solver, does this n times. """
+        last_delta = self.get_global_delta() + 2*self.convergence_threshold
         
-        for i in range(self.num_iterations):
-            self.self_consistent_condition()  # Updates the gap parameter
-            self.H_bdg = get_bdg_hamiltonian(self.H0, -self.delta)
+        while (abs(last_delta - self.get_global_delta()) > self.convergence_threshold):
+            last_delta = self.get_global_delta()
+            self.delta = self.self_consistent_condition()  # Updates the gap parameter
+            self.H_bdg = get_bdg_hamiltonian(self.H0, self.delta)
+            # print(abs(last_delta - self.get_global_delta()))
+            
         return self.delta
