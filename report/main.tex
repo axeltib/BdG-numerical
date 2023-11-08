@@ -9,7 +9,7 @@
 \usepackage{parskip}
 \setlength {\marginparwidth }{2cm}  % needed to resolve issues
 \usepackage{todonotes}
-\usepackage[toc,page]{appendix}
+% \usepackage[toc,page]{appendix}
 \usepackage{hyperref}
 
 \usepackage[margin=1.5in,footskip=0.25in]{geometry}
@@ -64,7 +64,8 @@ The number operator here is defined as
 	n_{j, \sigma} = c_{j, \sigma}^\dagger c_{j, \sigma}
 \end{equation}
 
-where the first term is the hopping term, the second is the BCS effective, on-site interaction term and the last term is the chemical potential. The latter can be given as a random sequence of numbers to represent impurities in the superconductor. \todo[inline]{will I study impurities?} The $j$ here denote the site at which the operators acts upon and $\sigma$ is the spin of the associated electron (either up or down). The model is a simplifaction of the model used in \cite{zhangChiralPwaveSuperconducting2019} (electron interaction is made on-site). 
+where the first term is the hopping term, the second is the BCS effective, on-site interaction term and the last term is the chemical potential. The latter can be given as a random sequence of numbers to represent impurities in the superconductor. %\todo[inline]{will I study impurities?} 
+The $j$ here denote the site at which the operators acts upon and $\sigma$ is the spin of the associated electron (either up or down). The model is a simplifaction of the model used in \cite{zhangChiralPwaveSuperconducting2019} (electron interaction is made on-site). 
 
 Working in quartic operator terms as we have here \eqref{eq:model} is quite impossible. To simplify this Hamiltonian we employ the mean-field approximation method in the following way. A quadratic operator term can be expanded around its expectation value with its variance. 
 
@@ -154,7 +155,7 @@ which finally yields us the self consistency condition
 
 \section{Methods}\label{sec:methods}
 The two methods studied here, normal and cluster, are very similar. First we give an outline of the general method, then specify the details of the cluster method. 
-\subsection{Normal BdG method}
+\subsection{ Normal BdG method (NBM) }
 
 First we generalize a bit. The matrix in the Hamiltonian will be $2N \times 2N$, where $N$ is the number of lattice sites. When diagonalizing the Hamiltonian (numerically), there will be $2N$ eigenvectors in the form
 
@@ -174,15 +175,65 @@ The core of the numerical methods is to diagonalize the Hamiltonian, calculate t
 
 The energy scale is chosen to be the amplitude of the hopping parameter $t$, and we will work in natural units. 
 
-\subsection{Cluster BdG method}
+\subsection{Cluster BdG method (CBM) }
 
 The cluster method key consideration is the time complexion of diagonalization, which is $\mathcal{O}(n^3)$. For larger systems, not only chains aswe have here, but 2D or 3D systems will the number of sites grow quickly, making the BdG formalism quite unusable. Instead we study if small areas around every site and diagonalize these smaller matrices. The hope is that this method corresponds to the normal one, and being faster. 
 
 Specifically how this is done is by taking the whole Hamiltonian matrix (just as we have in the normal method), and taking out the elements correlating to a site $i$ and its $N_c$ nearest neighbors, effectively creating a new cluster Hamiltonian with a $(2N_c + 1)\times(2N_c + 1)$ matrix. This is diagonalized, the gap parameter for the site $i$ is found by using the same consistency condition as before, just now we use the cluster matrix $H_c$ and its eigenvalues. The gap parameter for site $i$ can be defined in numerous ways, but here I decided to defined it as the mean over the $2N_c + 1$ gap parameters obtained here. 
 
+\todo[inline]{What is the time complexity of CBM?}
+
+Time complexity: $ O(n_c^3n) $
+
 \section{Results}\label{sec:results}
 
-\todo[inline]{Study instead systems with V=3 as it yields more stable performance, ref. mail w. Mats}
+%\todo[inline]{Study instead systems with V=3 as it yields more stable performance, ref. mail w. Mats}
+
+Ok, so we have the two methods; how do we compare them? First will I show a "sanity check" of sorts; making sure that when lowering the temperature will the energy gap behave as expected. 
+
+After that we first ask ourselves "what does one want to know when using a numerical method"? Well, optimally, you would like to know that given a set of parameters for CBMwill the error against the NBM be at a certain magnitude.
+
+This parameter for the CBM is the cluster size $N_c$. That is, after choosing a certain cluster size, what magnitude of error against the nominal BdG method. To investigate this, I have chosen an arbitrary fixed temperature, and compared the resulting energy gap of different cluster sizes in CBMs against that of the NBM. 
+
+\subsection{Sanity check} % (fold)
+\label{sub:sanity_check}
+
+% subsection Sanity check (end)
+
+\subsection{Timing of the models} % (fold)
+\label{sec:timing}
+In order to see if this is a useful we can study the time taken for each method. 
+
+We can expect the time to increase volume like against the increase in system size $N$, whicle for CBM by the cluster size. 
+
+Doing this in logarithmic scales will yield a nice plot on which we can fit lines through. 
+
+To do this we would collect the time taken for each iteration (yields some statistics) and fit a straight line on the logarithmic data. The slope should be 3 for the NBM, and 1 for CBM if everything goes well (when plotting time against $N$). 
+
+Note; since the cluster size must be less than half the number of sites, we start at a site number of 30, because we want to study cluster size of 10. 
+
+
+\textbf{THIS IS OLD TEXT} An essential part of this study is to compare the time it takes for a method to complete one iteration. This is where the qubic scaling of matrix diagonalization is highlighted. 
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.6\textwidth]{figures/timing_plot}
+	\caption{Timing of the methods compared to the system size in logarithmic scale. }
+	\label{fig:timing_comp}
+\end{figure}
+
+In fig. \ref{fig:timing_comp} can it be observed that for small systems is the normal methods the fastest. Going merely half a magnitude up has it already become the slowest of the methods, and slows down at a considerable pace compared to the other methods. The time increases with nearly 3 magnitudes when the system size is increased by one magnitude. All the while the other methods all lie on the line where the time increases by one magnitude for each magnitude increase in system size. Limitation on the upper limit has been put by the hardware, so trends for larger systems than this cannot be observed. 
+% section Comparison of the time taken (end)
+
+\subsection{Error against NBM} % (fold)
+\label{sub:error_against_nbm}
+
+Define the norm here: square sum of the spatial energy gaps. Comparing two is the square of the diff between two at one site
+
+
+
+% subsection Error against NBM (end)
+
 
 \subsection{Critical temperature compared to chemical potential}
 The system used here is $N = 30$ lattice sites, electron interaction strength $V=1.5t$, the temperature ranging from $0$ to $0.2t$ and the convergence threshold is set to $1e-8$. 
@@ -207,18 +258,6 @@ The system used here is $N = 30$ lattice sites, electron interaction strength $V
 In fig. \ref{fig:chemical-potential-study} can we see four methods being used: one "normal" and three cluster methods with $N_c = 1, 2, 3$ respectively. We can observe that generally are $T_c$ and $\Delta_0$ related for the same methods. However, these is some pretty interesting behavior. For the normal method we see that for some specific $\mu$ can the system not enter a superconducting state, identified by the gap parameter being 0 at $T=0$. 
 
 
-\subsection{Timing of the models}
-
-An essential part of this study is to compare the time it takes for a method to complete one iteration. This is where the qubic scaling of matrix diagonalization is highlighted. 
-
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=0.6\textwidth]{figures/timing_plot}
-	\caption{Timing of the methods compared to the system size in logarithmic scale. }
-	\label{fig:timing_comp}
-\end{figure}
-
-In fig. \ref{fig:timing_comp} can it be observed that for small systems is the normal methods the fastest. Going merely half a magnitude up has it already become the slowest of the methods, and slows down at a considerable pace compared to the other methods. The time increases with nearly 3 magnitudes when the system size is increased by one magnitude. All the while the other methods all lie on the line where the time increases by one magnitude for each magnitude increase in system size. Limitation on the upper limit has been put by the hardware, so trends for larger systems than this cannot be observed. 
 
 \section{Discussion}\label{sec:discussion}
 

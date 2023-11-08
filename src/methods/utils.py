@@ -19,6 +19,9 @@ def get_kiatev_hamiltonian(n, t=1, delta=1, mu=0):
 
     return -(t_array + delta_array + mu_array)
 
+# Should the order parameter be its own class?
+def generate_initial_order_parameter(n):
+    return (2*np.random.random((n,n)) - 1) + 1j*(2*np.random.random((n,n)) - 1)
 
 def get_bdg_hamiltonian(H, delta):
     n = np.shape(H)[0]

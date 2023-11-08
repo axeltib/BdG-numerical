@@ -1,9 +1,9 @@
 import numpy as np
 
-from bdg_method import BdG_method
-from utils import get_bdg_hamiltonian
+from src.methods.bdg_method import BdG_method
+from src.methods.utils import get_bdg_hamiltonian
 
-class MBdG_method(BdG_method):
+class CBdG_method(BdG_method):
     """
     Assumes only 1D. 
     """
@@ -11,7 +11,9 @@ class MBdG_method(BdG_method):
             super().__init__(N, Nc, mu, t, T, V, conv_thrs)
             if 2*self.Nc >= self.N:
                 raise Exception("Clustering number Nc must be less than N!")
-        
+    
+    def _set_id(self) -> None:
+        self.id = "CBM-Nc{}".format(self.Nc)
         
     def construct_cluster_matrices(self, site_index):
         """ Used to find the lattice neighbor elements in the BdG Hamiltoinan (H and delta). 
@@ -53,25 +55,17 @@ class MBdG_method(BdG_method):
             delta_diag +=  self.V * u * v.conj() * (1 - 2*self.fermi_dirac_distribution(E)) #elem vise mult
             
         # Was avg prior
-        return delta_diag[self.Nc]
+        return np.mean(delta_diag) / self.t
+        #return delta_diag[self.Nc] / self.t
         
         
     def run_one_pass(self):
         """ Runs one pass over the sites to update the delta"""
+        # to get closer to solution
+        self.last_global_delta = self.get_global_delta()
+        
         delta_tmp = np.zeros(self.N, dtype=self.dtype)
         for i in range(self.N):
             delta_tmp[i] = self.update_delta_site(i)
+            
         self.delta = np.diag(delta_tmp)
-        
-    def run_solver(self):
-        """ Runs the solver. """
-        last_delta = self.get_global_delta() + 2*self.convergence_threshold
-        
-        while (abs(last_delta - self.get_global_delta()) > self.convergence_threshold):
-            last_delta = self.get_global_delta()
-            self.run_one_pass()
-            
-            
-        return self.delta
-    
-
