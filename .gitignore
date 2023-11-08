@@ -1,4 +1,9 @@
 
-report/build/
+cluster_runs
+
+report/.build/
+report/gen/
+
+**.pdf
 
 __pycache__
