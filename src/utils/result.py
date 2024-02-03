@@ -64,6 +64,10 @@ class RunResults:
     
     def __init__(self) -> None:
         self.sim_results = dict()
+        self.system = None
+        
+    def set_system(self, system: System):
+        self.system = system
         
     def add_result(self, id: str, result: SimResult) -> None:
         self.sim_results[id] = result
